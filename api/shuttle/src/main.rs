@@ -1,14 +1,11 @@
 use std::fmt::format;
 
-use actix_web::{get, web::ServiceConfig};
 use shuttle_actix_web::ShuttleActixWeb;
 use shuttle_runtime::CustomError;
+use actix_web::{web::ServiceConfig};
 use sqlx::Executor;
 
-#[get("/")]
-async fn hello_world() -> &'static str {
-    "Hello World!"
-}
+use api_lib::health::{hello_world, get_version};
 
 #[shuttle_runtime::main]
 async fn actix_web(
@@ -36,16 +33,3 @@ async fn actix_web(
     Ok(config.into())
 }
 
-#[get("/version")]
-async fn get_version(
-    db: actix_web::web::Data<sqlx::PgPool>,
-) -> String {
-    let result: Result<String, sqlx::Error> = sqlx::query_scalar("SELECT version()")
-        .fetch_one(db.get_ref())
-        .await;
-
-    match result {
-        Ok(version) => version,
-        Err(e) => format!("Error: {}", e),
-    }
-}
