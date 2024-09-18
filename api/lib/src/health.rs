@@ -1,4 +1,11 @@
-use actix_web::{get};
+use actix_web::{get, web, HttpResponse};
+
+pub fn service(cfg: &mut actix_web::web::ServiceConfig) {
+    cfg.service(hello_world);
+    cfg.service(get_version);
+    cfg.route("/health",web::get().to(health));
+}
+
 #[get("/version")]
 async fn get_version(
     db: actix_web::web::Data<sqlx::PgPool>,
@@ -14,8 +21,11 @@ async fn get_version(
     }
 }
 
-
 #[get("/")]
 async fn hello_world() -> &'static str {
     "Hello World!"
+}
+// #[get("/health")]
+async fn health() -> HttpResponse {
+    HttpResponse::Ok().append_header(("version", "1.0.0")).finish()
 }

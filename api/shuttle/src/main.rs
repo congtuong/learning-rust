@@ -5,7 +5,7 @@ use shuttle_runtime::CustomError;
 use actix_web::{web::ServiceConfig};
 use sqlx::Executor;
 
-use api_lib::health::{hello_world, get_version};
+use api_lib::health::{self};
 
 #[shuttle_runtime::main]
 async fn actix_web(
@@ -25,9 +25,8 @@ async fn actix_web(
         .expect("Failed to create schema");
     let pool = actix_web::web::Data::new(pool);
     let config = move |cfg: &mut ServiceConfig| {
-        cfg.service(hello_world);
-        cfg.service(get_version);
-        cfg.app_data(pool);
+        cfg.app_data(pool).configure(api_lib::health::service)
+            .configure(api_lib::films::service);
     };
 
     Ok(config.into())
