@@ -1,33 +1,60 @@
-use actix_web::{web::{self, ServiceConfig}, HttpResponse};
+use crate::film_repo::FilmRepo;
+use actix_web::{
+    web::{self, ServiceConfig},
+    HttpResponse,
+};
+use shared::model::Film;
+use shared::request::CreateFilmRequest;
+use uuid::Uuid;
 
-pub fn service(cfg: &mut ServiceConfig) {
+// type Repo = web::Data<Box<dyn FilmRepo>>;
+
+pub fn service<R: FilmRepo>(cfg: &mut ServiceConfig) {
     cfg.service(
         web::scope("/v1")
-            .route("/films", web::get().to(get_all_films))
-            .route("/films/{id}", web::get().to(get_film))
-            .route("/films", web::post().to(create_film))
-            .route("/films/{id}", web::put().to(update_film))
-            .route("/films/{id}", web::delete().to(delete_film))
+            .route("/films", web::get().to(get_all_films::<R>))
+            .route("/films/{id}", web::get().to(get_film::<R>))
+            .route("/films", web::post().to(create_film::<R>))
+            .route("/films/{id}", web::put().to(update_film::<R>))
+            .route("/films/{id}", web::delete().to(delete_film::<R>)),
     );
 }
 
-async fn get_all_films() -> HttpResponse {
+async fn get_all_films<R: FilmRepo>(repo: web::Data<R>) -> HttpResponse {
     tracing::info!("Getting all films");
-    HttpResponse::Ok().finish()
+    match repo.get_films().await {
+        Ok(films) => HttpResponse::Ok().json(films),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
 }
-async fn get_film() -> HttpResponse {
+async fn get_film<R: FilmRepo>(id: web::Path<Uuid>, repo: web::Data<R>) -> HttpResponse {
     tracing::info!("Getting film");
-    HttpResponse::Ok().finish()
+    match repo.get_film(&id).await {
+        Ok(film) => HttpResponse::Ok().json(film),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
 }
-async fn create_film() -> HttpResponse {
+async fn create_film<R: FilmRepo>(
+    req: web::Json<CreateFilmRequest>,
+    repo: web::Data<R>,
+) -> HttpResponse {
     tracing::info!("Creating film");
-    HttpResponse::Ok().finish()
+    match repo.create_film(&req).await {
+        Ok(film) => HttpResponse::Ok().json(film),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
 }
-async fn update_film() -> HttpResponse {
+async fn update_film<R: FilmRepo>(req: web::Json<Film>, repo: web::Data<R>) -> HttpResponse {
     tracing::info!("Updating film");
-    HttpResponse::Ok().finish()
+    match repo.update_film(&req).await {
+        Ok(film) => HttpResponse::Ok().json(film),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
 }
-async fn delete_film() -> HttpResponse {
+async fn delete_film<R: FilmRepo>(id: web::Path<Uuid>, repo: web::Data<R>) -> HttpResponse {
     tracing::info!("Deleting film");
-    HttpResponse::Ok().finish()
+    match repo.delete_film(&id).await {
+        Ok(film) => HttpResponse::Ok().json(film),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
 }

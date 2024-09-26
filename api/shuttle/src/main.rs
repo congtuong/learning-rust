@@ -1,8 +1,8 @@
 use std::fmt::format;
 
+use actix_web::web::ServiceConfig;
 use shuttle_actix_web::ShuttleActixWeb;
 use shuttle_runtime::CustomError;
-use actix_web::{web::ServiceConfig};
 use sqlx::Executor;
 
 use api_lib::health::{self};
@@ -23,12 +23,15 @@ async fn actix_web(
     pool.execute(include_str!("../../db/schema.sql"))
         .await
         .expect("Failed to create schema");
-    let pool = actix_web::web::Data::new(pool);
+    let film_repo = api_lib::film_repo::PostgresFilmRepo::new(pool);
+    let film_repo = actix_web::web::Data::new(film_repo);
+    // let film_repo: actix_web::web::Data<Box<dyn api_lib::film_repo::FilmRepo>> =
+    // actix_web::web::Data::new(Box::new(film_repo));
     let config = move |cfg: &mut ServiceConfig| {
-        cfg.app_data(pool).configure(api_lib::health::service)
-            .configure(api_lib::films::service);
+        cfg.app_data(film_repo)
+            .configure(api_lib::health::service)
+            .configure(api_lib::films::service::<api_lib::film_repo::PostgresFilmRepo>);
     };
 
     Ok(config.into())
 }
-
