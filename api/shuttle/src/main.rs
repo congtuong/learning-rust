@@ -5,6 +5,7 @@ use shuttle_actix_web::ShuttleActixWeb;
 use shuttle_runtime::CustomError;
 use sqlx::Executor;
 
+use actix_files::Files;
 use api_lib::health::{self};
 
 #[shuttle_runtime::main]
@@ -28,9 +29,13 @@ async fn actix_web(
     // let film_repo: actix_web::web::Data<Box<dyn api_lib::film_repo::FilmRepo>> =
     // actix_web::web::Data::new(Box::new(film_repo));
     let config = move |cfg: &mut ServiceConfig| {
-        cfg.app_data(film_repo)
-            .configure(api_lib::health::service)
-            .configure(api_lib::films::service::<api_lib::film_repo::PostgresFilmRepo>);
+        cfg.service(
+            actix_web::web::scope("/api")
+                .app_data(film_repo)
+                .configure(api_lib::health::service)
+                .configure(api_lib::films::service::<api_lib::film_repo::PostgresFilmRepo>),
+        )
+        .service(Files::new("/", "static").index_file("index.html"));
     };
 
     Ok(config.into())
