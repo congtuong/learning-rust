@@ -10,8 +10,14 @@ use uuid::Uuid;
 // type Repo = web::Data<Box<dyn FilmRepo>>;
 
 pub fn service<R: FilmRepo>(cfg: &mut ServiceConfig) {
+    let cors = actix_cors::Cors::default()
+        .allow_any_origin()
+        .allow_any_method()
+        .allow_any_header();
+
     cfg.service(
         web::scope("/v1")
+            .wrap(cors)
             .route("/films", web::get().to(get_all_films::<R>))
             .route("/films/{id}", web::get().to(get_film::<R>))
             .route("/films", web::post().to(create_film::<R>))

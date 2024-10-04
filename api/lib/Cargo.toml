@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 actix-web = "4.3.1"
 shuttle-actix-web = "0.47.0"
+actix-cors = "0.7.0"
 shuttle-runtime = "0.47.0"
 tokio = "1.26.0"
 shuttle-shared-db = { version = "0.47.0",features = ["postgres"] }
